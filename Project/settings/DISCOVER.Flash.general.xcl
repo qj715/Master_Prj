@@ -1,0 +1,15 @@
+"D:\QQJ\Documents\IAR\arm\bin\armproc.dll" 
+
+"D:\QQJ\Documents\IAR\arm\bin\armstlink2.dll" 
+
+"C:\Users\QQJ\Documents\IAR Embedded Workbench\arm\8.11.2\ST\STM32F0xx\STM32F0-DISCOVERY\Project\Flash\Exe\DISCOVER.out" 
+
+--plugin "D:\QQJ\Documents\IAR\arm\bin\armbat.dll" 
+
+--device_macro "D:\QQJ\Documents\IAR\arm\config\debugger\ST\STM32F0xx.dmac" 
+
+--flash_loader "D:\QQJ\Documents\IAR\arm\config\flashloader\ST\FlashSTM32F05xx8.board" 
+
+
+
+

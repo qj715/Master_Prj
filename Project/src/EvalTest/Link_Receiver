@@ -1,0 +1,8 @@
+uint8_t EOP_Flag = 0;
+#define EOP 0x01
+#define Port_EOP DPIO_Pin_
+EOP_Flag = GPIOB -> IDR & Port_EOP ;
+switch (EOP_Flag)
+ case 1:  return(EOP);
+ case 0:
+ default: return (GPIOB -> IDR & 0xFF)
