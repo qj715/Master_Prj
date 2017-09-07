@@ -61,6 +61,7 @@ GPIO_InitTypeDef        GPIO_InitStructure;
   uint8_t rx_buf_idx = 0;
   uint8_t rx_buf[SPINN_SHORT_SYMS*2];
   uint8_t Buffer[20] = 0;
+  uint8_t Position_ID = 1;
   static uint8_t symbol_table[] = 
 {
     0x11, 0x12, 0x14, 0x18, 0x21, 0x22, 0x24, 0x28,
@@ -69,9 +70,9 @@ GPIO_InitTypeDef        GPIO_InitStructure;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 uint16_t TimerPeriod = 0;
-uint16_t Channel1Pulse = 0, Channel2Pulse = 0, Channel3Pulse = 0, Channel4Pulse = 0;
-    uint16_t speed = 0;
-    uint8_t speed_syms[4];
+uint16_t Channel1Pulse = 0, Channel2Pulse = 0, Channel3Pulse = 0, ChannelPulse = 0;
+    uint16_t key = 0;
+    uint8_t key_syms[4];
 /**
   * @brief  Main program.
   * @param  None
@@ -99,22 +100,31 @@ void spinn_use_data(uint8_t *buf)
 
 
     /* Decode buffer and get motor data */
-    speed_syms[0] = spinn_lookup_sym(buf[2]);
-    speed_syms[1] = spinn_lookup_sym(buf[3]);
-    speed_syms[2] = spinn_lookup_sym(buf[4]);
-    speed_syms[3] = spinn_lookup_sym(buf[5]);
-    if (speed_syms[0] >= sizeof(symbol_table) || 
-        speed_syms[1] >= sizeof(symbol_table) || 
-        speed_syms[2] >= sizeof(symbol_table) || 
-        speed_syms[3] >= sizeof(symbol_table))
+    key_syms[0] = spinn_lookup_sym(buf[2]);
+    key_syms[1] = spinn_lookup_sym(buf[3]);
+    key_syms[2] = spinn_lookup_sym(buf[4]);
+    key_syms[3] = spinn_lookup_sym(buf[5]);
+    if (key_syms[0] >= sizeof(symbol_table) || 
+        key_syms[1] >= sizeof(symbol_table) || 
+        key_syms[2] >= sizeof(symbol_table) || 
+        key_syms[3] >= sizeof(symbol_table))
     {
         /* Received a symbol in error; return early */
         return;
     }
-    speed = speed_syms[0] +
-            (speed_syms[1] << 4) +
-            (speed_syms[2] << 8) +
-            (speed_syms[3] << 12);
+    key = key_syms[0] +
+            (key_syms[1] << 4) +
+            (key_syms[2] << 8) +
+            (key_syms[3] << 12);
+    Position_ID =  key & 0x07;
+    switch(Position_ID)
+    {
+      case 0: ChannelPulse = Channel1Pulse;break;
+      case 1: ChannelPulse = Channel2Pulse;break;
+      case 2: ChannelPulse = Channel3Pulse;break;
+    default: break;
+      
+    }
 }
 
 void Receive_data(void);
@@ -205,10 +215,10 @@ void Receive_data(void);
   /* Compute the value to be set in ARR regiter to generate signal frequency at 17.57 Khz */
     TimerPeriod = SystemCoreClock ;
   /* Compute CCR1 value to generate a duty cycle  */
-    Channel2Pulse = (uint16_t) (((uint32_t)  (TimerPeriod - 1)) / 20);//5%   0.98ms
-    Channel1Pulse = (uint16_t) (((uint32_t) 625 * (TimerPeriod - 1)) / 1000);//6.25%   1.25ms 
+    Channel1Pulse = (uint16_t) (((uint32_t)  (TimerPeriod - 1)) / 20);//5%   0.98ms
+    Channel2Pulse = (uint16_t) (((uint32_t) 625 * (TimerPeriod - 1)) / 1000);//6.25%   1.25ms 
     Channel3Pulse = (uint16_t) (((uint32_t)  875 * (TimerPeriod - 1)) / 1000);//8.75%  1.75ms
-
+    ChannelPulse =   Channel3Pulse = (uint16_t) (((uint32_t) 15 * (TimerPeriod - 1)) / 200);//15%  1.46ms
 
 
   /* TIM1 clock enable */
@@ -235,14 +245,15 @@ void Receive_data(void);
 
     TIM_OC1Init(TIM1, &TIM_OCInitStructure);
 
-    TIM_OCInitStructure.TIM_Pulse = Channel2Pulse;
+    TIM_OCInitStructure.TIM_Pulse = ChannelPulse;
     TIM_OC2Init(TIM1, &TIM_OCInitStructure);
 
-    TIM_OCInitStructure.TIM_Pulse = Channel3Pulse;
+    TIM_OCInitStructure.TIM_Pulse = ChannelPulse;
     TIM_OC3Init(TIM1, &TIM_OCInitStructure);
-
-    TIM_OCInitStructure.TIM_Pulse = Channel4Pulse;
+    
+    TIM_OCInitStructure.TIM_Pulse = ChannelPulse;
     TIM_OC4Init(TIM1, &TIM_OCInitStructure);
+
 
     /* TIM1 counter enable */
     TIM_Cmd(TIM1, ENABLE);
